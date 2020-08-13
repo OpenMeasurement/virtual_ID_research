@@ -26,3 +26,13 @@ The `df_census` table contains the following columns:
 The `demo_cols` columns are only used when in-segment reach curve
 is desired, for example when the exact reach curve inside each of the segments
 such as `age_range`, `ethnicity`, etc is needed.
+
+All the functions, including the VID assignments, reach/frequency calculations, and plottings functionalities are currenlty under the `vid_spark.py` file.
+
+### Notebooks
+Table of available notebooks and a brief description of their content.
+| Notebook | Description |
+| :-: | :- |
+| [VID_uniform_reach](https://github.com/VideoAmp/privacyAmp/blob/master/VID_uniform_reach.ipynb) | Detailed notebook about the issues with assuming uniform reach and comparison with the alternative, in-segment learning of reach curves. |
+| [VID_basic_count](https://github.com/VideoAmp/privacyAmp/blob/master/VID_basic_count.ipynb) | The basic VID assignment example. Here we also explain why we have to use a unique impression identifier to assign VIDs. |
+| [VID_basic_explode](https://github.com/VideoAmp/privacyAmp/blob/master/VID_basic_explode.ipynb) | The basic VID assignment example where the impressions are exploded based on the associated weight to each user. |
