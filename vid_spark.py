@@ -16,13 +16,13 @@ from pyspark import StorageLevel
 from pyspark.sql.types import ArrayType, IntegerType, StringType
 
 
-##################################################
-### reach and frequency calculations from data ###
-##################################################
+################################################################
+### reach and frequency calculations from impression records ###
+################################################################
 
 def add_exposure_index(df_impressions, id_col="user_id", order_col="timestamp") :
     """
-    Calculate the exposure_index for each impression. The `exposure_index` is a integer `n > 0`
+    Calculate the `exposure_index` for each impression. The `exposure_index` is a integer `n > 0`
     which indicates the corresponding impression is the `n`th time the user has been exposed. This
     is used in reach/frequency calculations.
 
@@ -142,7 +142,7 @@ def _generate_reach_table_count_in_segments(df, demo_cols):
         .select(*demo_cols, "timestamp", "reach_inc", "impression_inc").distinct()
 
         .withColumn("reach", F.sum(F.col("reach_inc")).over(window3))
-        .withColumn("impression", F.sum(F.col("impression_inc")).over(window2))
+        .withColumn("impression", F.sum(F.col("impression_inc")).over(window3))
     )
 
 def _generate_reach_table_weighted_in_segments(df, demo_cols):
@@ -157,7 +157,7 @@ def _generate_reach_table_weighted_in_segments(df, demo_cols):
         .select(*demo_cols, "timestamp", "reach_inc", "impression_inc").distinct()
 
         .withColumn("reach", F.sum(F.col("reach_inc")).over(window3))
-        .withColumn("impression", F.sum(F.col("impression_inc")).over(window2))
+        .withColumn("impression", F.sum(F.col("impression_inc")).over(window3))
     )
 
 def generate_frequency_table(df_impressions, id_col="user_id", demo_cols=None, mode="count") :
@@ -353,13 +353,13 @@ def penetrate_uniform_reach(df_census, alphas, rates, demo_cols) :
     population_size = df_census.agg(F.sum("population")).collect()[0][0]
     df_dirac_mixtures = (
         df_census
-        .groupBy(*demo_cols).agg((F.sum("population")/population_size).alias("ratio"))
-        .withColumn("alphas", F.array([F.round(F.col("ratio") * alpha, 8) for alpha in alphas]))
-        .withColumn("rates", F.array([ F.round(F.lit(rate), 8) for rate in rates]))
+        .groupBy(*demo_cols).agg(F.sum("population").alias("population"))
+        .withColumn("alphas", F.array([F.round(F.lit(alpha), 8) for alpha in alphas]))
+        .withColumn("rates", F.array([ F.round(F.lit(rate) , 8) for rate in rates]))
         .sort(*demo_cols)
         .select(
             *demo_cols, 
-            "ratio",
+            "population",
             "alphas",
             "rates"
         )
@@ -392,7 +392,7 @@ def _arrow3D(ax, x, y, z, dx, dy, dz, *args, **kwargs):
 
 setattr(Axes3D,'arrow3D',_arrow3D)
 
-def dirac_mixtures_plot_3d_segment(df_dirac_mixtures, demo_cols, ax=None, color='C3') :
+def dirac_mixtures_plot_3d_segment(mixture_of_deltas, demo_cols, ax=None, color='C3') :
     if ax is not None :
         fig = plt.gcf()
     else : 
@@ -400,18 +400,20 @@ def dirac_mixtures_plot_3d_segment(df_dirac_mixtures, demo_cols, ax=None, color=
     
     max_rate = 0
     max_alpha = 0
-    for i in df_dirac_mixtures.index:
-        label = df_dirac_mixtures[demo_cols].loc[i]
-        alphas = df_dirac_mixtures['alphas'].loc[i]
-        rates = df_dirac_mixtures['rates'].loc[i]
+    population_size = mixture_of_deltas['population'].sum()
+    for i in mixture_of_deltas.index:
+        label      = mixture_of_deltas[demo_cols].loc[i]
+        ratio      = mixture_of_deltas['population'].loc[i] / population_size
+        alphas     = mixture_of_deltas['alphas'].loc[i]
+        rates      = mixture_of_deltas['rates'].loc[i]
         for j, x in enumerate(rates):
-            ax.arrow3D(x, i, 0, 0, 0, alphas[j], color=color, mutation_scale=10, arrowstyle="-|>")
+            ax.arrow3D(x, i, 0, 0, 0, alphas[j] * ratio, color=color, mutation_scale=10, arrowstyle="-|>")
         if np.max(rates) > max_rate :
             max_rate = np.max(rates)
-        if np.max(alphas) > max_alpha:
-            max_alpha = np.max(alphas)
+        if np.max(alphas) * ratio > max_alpha:
+            max_alpha = np.max(alphas) * ratio
     
-    ax.set_ylim(0, df_dirac_mixtures.shape[0])
+    ax.set_ylim(0, mixture_of_deltas.shape[0])
     #ax.set_xlim(0, max_rate  * 1.2)
     ax.set_xlim(0, 2.0)
     ax.set_zlim(0, max_alpha * 1.1)
@@ -421,7 +423,7 @@ def dirac_mixtures_plot_3d_segment(df_dirac_mixtures, demo_cols, ax=None, color=
     ax.set_zlabel("amplitudes")
     ax.grid(False)
     ax.set_xticks(range(int(max_rate)))
-    yticks = map(lambda x : ",".join(x), df_dirac_mixtures[demo_cols].to_numpy())
+    yticks = map(lambda x : ",".join(x), mixture_of_deltas[demo_cols].to_numpy())
     ax.set_yticklabels(yticks, rotation=-30)
     return fig, ax
                         
@@ -504,22 +506,30 @@ def generate_vid_assignment_table(dirac_mixtures, population_size, demo_cols=Non
                                    'start_VID', 'total_VID'])
         previous_vid = 0
         for i in dirac_mixtures.index: 
-            demos  = dirac_mixtures[demo_cols].loc[i]
-            alphas = np.array(dirac_mixtures['alphas'].loc[i])
-            rates  = np.array(dirac_mixtures['rates' ].loc[i])
+            demos      = dirac_mixtures[demo_cols].loc[i]
+            population = dirac_mixtures['population'].loc[i]
+            alphas     = np.array(dirac_mixtures['alphas'].loc[i])
+            rates      = np.array(dirac_mixtures['rates' ].loc[i])
 
             aks = alphas * rates
             kappa = np.sum(aks)
 
-            N_ks  = np.ceil(alphas * population_size)
+            N_ks  = np.ceil(alphas * population)
+
             N_ks_cumsum = np.insert(np.cumsum(N_ks), 0 , 0) + previous_vid
             previous_vid = N_ks_cumsum[n]
-            cum_prob = np.insert(np.cumsum(aks/kappa), 0, 0)
+            cum_prob = np.insert(np.cumsum(aks), 0, 0)
+            if normalize :
+                cum_prob = cum_prob / kappa
             for j in range(n):
-                dp.loc[n*i+j]  = [*demos, 
+                last_index = 0 if pd.isnull(dp.index.max()) else dp.index.max() + 1
+                dp.loc[last_index]  = [*demos, 
                                   cum_prob[j], cum_prob[j+1], 
                                   alphas[j], rates[j], 
                                   int((N_ks_cumsum[:n]+1)[j]), int(N_ks[j])]
+            if not normalize :
+                last_index = 0 if pd.isnull(dp.index.max()) else dp.index.max() + 1
+                dp.loc[last_index] = [*demos, cum_prob[n], 1.0, 0., 0., 0, 1]
     
     dp = dp.astype({'prob_>='   : float,
                     'prob_<'    : float,
