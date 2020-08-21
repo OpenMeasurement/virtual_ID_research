@@ -1,9 +1,9 @@
 # Cross Media Virtual ID Research 
 
-A majority of free content across the internet and televsion is fueled by advertising revenues. The underpining of the advertising and media industries are reliant on having an indepdent auditing and measurement layer to let the advertiser and media owner know when their services have been rendered. Today the industry standard tools for measurement are usually are designed where increased accuracy or sophistication in methodology often comes with a negative trade off for consumer privacy or security risk of leaking consumer private data. We envision a world where this doesn't have to be the case - a world where privacy, security, multi-owner governance are incorporated into the fabric of the codebase of measurement and identity. We believe consumer privacy can be first while ensuring the industry doesn't need to retract on its advancements to threaten indepedent free distribution of information and the advertiser's desire to connect with its target audience in a smarter and more personalized way.
+A majority of free content across the internet and televsion is fueled by advertising revenues. The underpining of the advertising and media industries are reliant on having an indepdent auditing and measurement layer to let the advertiser and media owner know when their services have been rendered. Today the industry standard tools for measurement are usually designed where increased accuracy or sophistication in methodology often comes with a negative trade off for consumer privacy or security risk of leaking private data. We envision a world where this doesn't have to be the case - a world where privacy, security, multi-owner governance are incorporated into the fabric of the codebase of measurement and identity. We believe consumer privacy can be first while ensuring the industry doesn't need to retract on its advancements to threaten indepedent free distribution of information and the advertiser's desire to connect with its target audience in a smarter and more personalized way.
 
 
-This repository currently containes the initial R&D of the VideoAmp data science team on one key concept on this journey of reinventing privacy from the ground up; Virtual ID (VID) assignment to impressions/events table. The VID assignment is a set of algorithms, initially suggested in the paper [Virtual People: Actionable Reach Modeling](https://research.google/pubs/pub48387/). We are going to be initially focused on getting linear TV household data into this model in an accurate way, then finding a way to make this person level and combining it with person level digital data for a true cross-media measurement methodology of household level TV ad exposure and person level digital ad exposure in a unduplicated fashion.
+This repository currently containes the initial R&D of VideoAmp's data science team on one key concept on this journey toward reinventing privacy from the ground up; Virtual ID (VID) assignment to impressions/events. The VID assignment is a set of algorithms, initially suggested in the paper [Virtual People: Actionable Reach Modeling](https://research.google/pubs/pub48387/). We are going to be initially focused on getting linear TV household data into this model in an accurate way, then extend the household level TV data to the person level and combine it with person level digital data for a true cross-media measurement methodology of household level TV ad exposure and person level digital ad exposure in a unduplicated fashion.
 
 ## Code Structure
 We assume the existance of the following two tables. The `df_impressions` table containing the impressions/events and the `df_census` table
@@ -42,40 +42,40 @@ Table of available notebooks and a brief description of their content.
 
 
 ## Road Map
-The privacy-preserving measurement is a fast-evolving field. We wish to implement multiple VID assignment strategies that fit different needs and situations. In particular we’d like to follow the roadmap below:
+Privacy-preserving measurement is a fast-evolving field. We wish to implement multiple VID assignment strategies that fit different needs and situations. In particular we’d like to follow the roadmap below:
 
-- Provide synthetic data,
-	- Synthetic impression data generation,
-	- Provide detailed simulations of the various VID assignment methods developed,
-- Detail problematic issues regarding TV/Linear data and develop practical solutions,
-	- Address specific time slot for TV shows,
-	- Design the concept of “cookie” for TV/Linear viewership,
-- Modify the VID assignment algorithm for correct frequency estimation,
-	- Simulate the long tail TV/Linear,
-	- Explore possible modification of the original VID assignment,
-- Towards private cross-media measurement,
-	- Detail the difference of digital cookie and TV/Linear device,
-	- Design cross-media VID assignment algorithms,
+- Provide synthetic data
+	- Synthetic impression data generation
+	- Provide detailed simulations of the various VID assignment methods developed
+- Detail problematic issues regarding TV/linear data and develop practical solutions
+	- Address specific time slot for TV shows
+	- Design the concept of “cookie” for TV/linear viewership
+- Modify the VID assignment algorithm for correct frequency estimation
+	- Simulate the long tail TV/linear
+	- Explore possible modification of the original VID assignment
+- Towards private cross-media measurement
+	- Detail the difference of digital cookie and TV/linear device
+	- Design cross-media VID assignment algorithms
 	- Test/simulate cross-media VID assignment
 
 Here is an in-depth exploration of the issues ahead of our road:  
 
 ### Provide synthetic impression records
-While we are committed to share a sample of our TV/Linear viewership data, we understand that accessing the data may not be possible for most people interested in demoing the VID assignment algorithms. As an alternative, we would like to provide easily-accessible synthetic data with the desired properties in order to facilitate more contribution to make this repo useful for those interested. 
+While we are committed to sharing a sample of our TV/linear viewership data, we understand that accessing the data may not be possible for most people interested in demoing the VID assignment algorithms. As an alternative, we would like to provide easil accessible synthetic data with the desired properties in order to facilitate additional contributions to make this repo useful for those interested. 
  
-### Explain and Address issues specific to TV/Linear viewership records
-The methodologies to measure effectiveness of TV/Linear ads and digital ads vary significantly.
-Unlike digital data, only a fraction of the TV/Linear data is available which in turn requires us to extrapolate information from a panel of households to the entire population based on a weighting methodology. Furthermore, TV/Linear viewership comes in batches of impressions lacking a specific time ordering (that is hundreds of thousands of impressions for a single ad that airs during a program). Therefore a typical reach curve (as a function of number of impressions) is not as smooth as a digital reach curve.
+### Explain and address issues specific to TV/linear viewership records
+The methodologies to measure effectiveness of TV/linear ads and digital ads vary significantly.
+Unlike digital data, only a fraction of the TV/linear data is available which in turn requires us to extrapolate information from a panel of households to the entire population based on a weighting methodology. Furthermore, TV/linear viewership comes in batches of impressions lacking a specific time ordering (that is hundreds of thousands of impressions for a single ad that airs during a program). Therefore a typical reach curve (as a function of number of impressions) is not as smooth as a digital reach curve.
  
- Another important difference is that for digital ads, the reach curve usually indicates the *number of unique people reached* as a function of *unique cookies reached* -- so the problem boils down to the mapping from people to cookies. However, in the TV/Linear viewership, the devices are identified by a unique household identifier and therefore, the so-called cookie resolution problem does not enter the reach/frequency calculation process.
+Another important difference is that for digital ads, the reach curve usually indicates the *number of unique people reached* as a function of *unique IDs reached* -- so the problem boils down to the mapping from people to IDs. However, in the TV/linear viewership, the devices are identified by a unique household identifier and therefore, posing different challenges to ID resolution.
  
- A related issue is that TV shows air at specific time slots and are not available at all times unlike most content provided by digital publishers. The timestamp of each impression carries relevant information to viewership patterns and thus it would be inappropriate to “smear” out the impressions into a smooth reach curve as is required by basic VID assignment methodologies.
+ A related issue is that TV shows air at specific time slots and are not available at all times unlike most content provided by digital publishers. The timestamp of each impression carries relevant information to viewership patterns and thus it would not be suitable to “smear” out the impressions into a smooth reach curve as is required by basic VID assignment methodologies.
  
- The last difference is that co-viewership is very common for Linear/TV viewerships, and currently not many personalization techniques exist. A simple minimalistic approach is to start from a viewership survey and add a probabilistic step in the VID assignment algorithm. The reliability of such approaches are subject to further research, and a more direct measurement may be required for a convincing final measurement report.
+The last difference is that co-viewership is very common for linear viewership and addressability is not widespead. A simple approach is to start from viewership and add probabilistic steps in the VID assignment algorithm. The reliability of such approaches are subject to further research, and a more direct measurement may be required for a convincing final measurement report.
         
 ### Getting the frequency right
-We have shown in the notebooks that fitting reach curves to mixtures of deltas does not result in a correct reach/frequency estimation. More precisely, the long algebraic tail of TV/Linear viewership does not follow a mixture of delta activity distribution functions. Therefore, more care should be taken to get the frequency estimation right. We believe a small modification to the original suggestion of VID assignment can faithfully predict the frequency for a wide range of exposures.
+We have shown in the notebooks that fitting reach curves to mixtures of deltas does not result in a correct reach/frequency estimation. More precisely, the long algebraic tail of TV/linear viewership does not follow a mixture of delta activity distribution functions. Therefore, more care should be taken to get the frequency estimation right. We believe a small modification to the original suggestion of VID assignment can faithfully predict the frequency for a wide range of exposures.
 
 ### Towards private cross-media measurement.
-Of course the final desired product is a fully functional cross-media measurement VID assignment platform. In order to achieve this goal, we have to combine all the solutions above and research the applicability of the VID algorithm across TV/Linear and digital impressions.
+Of course the final desired product is a fully functional cross-media measurement VID assignment platform. In order to achieve this goal, we have to combine all the solutions above and research the applicability of the VID algorithm across TV/linear and digital impressions.
 
