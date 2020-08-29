@@ -74,8 +74,13 @@ Another important difference is that for digital ads, the reach curve usually in
 The last difference is that co-viewership is very common for linear viewership and addressability is not widespead. A simple approach is to start from viewership and add probabilistic steps in the VID assignment algorithm. The reliability of such approaches are subject to further research, and a more direct measurement may be required for a convincing final measurement report.
         
 ### Getting the frequency right
-We have shown in the notebooks that fitting reach curves to mixtures of deltas does not result in a correct reach/frequency estimation. More precisely, the long algebraic tail of TV/linear viewership does not follow a mixture of delta activity distribution functions. Therefore, more care should be taken to get the frequency estimation right. We believe a small modification to the original suggestion of VID assignment can faithfully predict the frequency for a wide range of exposures.
+We have shown in the notebooks that fitting reach curves to mixtures of deltas does not result in a correct reach/frequency estimation. More precisely, the long algebraic tail of TV/linear viewership does not follow a mixture of delta activity distribution functions. Therefore, more care should be taken to get the frequency estimation right. We believe a small modification to the original suggestion of VID assignment can faithfully predict the frequency for a wide range of exposures. The following plots illustrate the issue with frequency estimation: while the reach curves are correctly estimated the frequencies show an over-population near the positions of the Dirac deltas, and lack the long tail. The data is for in-segment reach curve fittings of a mixture of three delta functions for the age-range demographics.
 
+<p align="center">
+<img src="reach_vid.png" width="45%">
+<img src="frequency_vid.png" width="40%">
+</p>
+	
 ### Towards private cross-media measurement.
 Of course the final desired product is a fully functional cross-media measurement VID assignment platform. In order to achieve this goal, we have to combine all the solutions above and research the applicability of the VID algorithm across TV/linear and digital impressions.
 
